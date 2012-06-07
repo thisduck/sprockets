@@ -12,7 +12,7 @@ module Sprockets
   # languages and processes that don't have sprockets loaded. See
   # `#assets` and `#files` for more infomation about the structure.
   class Manifest
-    attr_reader :environment, :path, :dir
+    attr_reader :environment, :path, :dir, :non_digest
 
     # Create new Manifest associated with an `environment`. `path` is
     # a full path to the manifest json file. The file may or may not
@@ -22,8 +22,9 @@ module Sprockets
     #
     #   Manifest.new(environment, "./public/assets/manifest.json")
     #
-    def initialize(environment, path)
+    def initialize(environment, path, non_digest = true)
       @environment = environment
+      @non_digest = non_digest
 
       if File.extname(path) == ""
         @dir  = File.expand_path(path)
@@ -97,12 +98,14 @@ module Sprockets
           assets[asset.logical_path] = asset.digest_path
 
           target = File.join(dir, asset.digest_path)
+          logical_target = File.join(dir, asset.logical_path)
 
           if File.exist?(target)
             logger.debug "Skipping #{target}, already exists"
           else
             logger.info "Writing #{target}"
             asset.write_to target
+            asset.write_to logical_target if @non_digest
           end
 
           save
